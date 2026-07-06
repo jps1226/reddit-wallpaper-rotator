@@ -53,18 +53,19 @@ The app uses the OAuth *application-only* (`installed_client`) flow — read-onl
 
 ## Where things live
 
-Everything is per-user under `%LOCALAPPDATA%\WallpaperReddit`:
+App data lives per-user under `%LOCALAPPDATA%\WallpaperReddit`:
 
 | File / folder      | Purpose                                   |
 |--------------------|-------------------------------------------|
 | `settings.json`    | Your settings                             |
 | `library.json`     | Wallpaper history + favorite flags        |
 | `blacklist.json`   | Images you never want again               |
-| `Wallpapers\`      | Full-size downloaded images               |
 | `Thumbnails\`      | Generated thumbnails                      |
 | `app.log`          | Activity / diagnostics                    |
 
-Uninstalling removes this folder.
+Downloaded wallpapers are stored separately, under **`%USERPROFILE%\Pictures\Reddit Wallpaper Rotator\`**. This is deliberate: the Windows desktop/shell wallpaper loader can't read images under `AppData` on some setups (e.g. shells modified by ExplorerPatcher), which makes the desktop go black — Pictures is a media folder the shell can always read. Images are also re-encoded to a screen-sized baseline JPEG before being applied, so oversized or oddly-encoded source images can't break rendering.
+
+Uninstalling removes the `%LOCALAPPDATA%\WallpaperReddit` folder; your downloaded wallpapers in Pictures are left in place.
 
 ## Project layout
 

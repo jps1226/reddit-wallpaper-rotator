@@ -48,5 +48,7 @@ Name: "{userstartup}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Parameters: "
 Filename: "{app}\{#AppExeName}"; Description: "Launch {#AppName}"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
-; Remove per-user data folder on uninstall.
+; Remove per-user app data on uninstall. Downloaded wallpapers under the user's
+; Pictures\Reddit Wallpaper Rotator folder are intentionally left in place so the
+; user keeps any images they liked.
 Type: filesandordirs; Name: "{localappdata}\WallpaperReddit"

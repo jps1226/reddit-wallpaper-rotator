@@ -69,14 +69,12 @@ namespace WallpaperReddit.Services
             var sha = Sha256Hex(data);
 
             int width, height;
-            ImageFormat format;
             try
             {
                 using var probe = new MemoryStream(data);
                 using var img = Image.FromStream(probe, useEmbeddedColorManagement: false, validateImageData: true);
                 width = img.Width;
                 height = img.Height;
-                format = img.RawFormat;
             }
             catch
             {
@@ -91,13 +89,17 @@ namespace WallpaperReddit.Services
             if (aspect < s.MinAspectRatio || aspect > s.MaxAspectRatio)
                 return Fail($"aspect {aspect:0.00} outside wallpaper range");
 
-            var ext = ExtensionFor(format);
-            var filePath = Path.Combine(AppPaths.WallpapersDir, SafeName(id) + ext);
+            // Always save as a normalised baseline 24bpp JPEG sized to cover the desktop.
+            // This (a) shrinks huge images that Windows can otherwise fail to render (black
+            // desktop), and (b) strips odd encodings (CMYK/progressive/embedded profiles)
+            // that some desktop loaders choke on.
+            var filePath = Path.Combine(AppPaths.WallpapersDir, SafeName(id) + ".jpg");
             var thumbPath = Path.Combine(AppPaths.ThumbnailsDir, SafeName(id) + ".jpg");
 
+            long savedBytes;
             try
             {
-                await File.WriteAllBytesAsync(filePath, data, ct).ConfigureAwait(false);
+                savedBytes = SaveWallpaperCopy(data, filePath);
                 MakeThumbnail(data, thumbPath);
             }
             catch (Exception ex)
@@ -110,11 +112,60 @@ namespace WallpaperReddit.Services
                 Success = true,
                 FilePath = filePath,
                 ThumbnailPath = thumbPath,
-                Width = width,
+                Width = width,   // original source dimensions, kept for display
                 Height = height,
-                Bytes = data.Length,
+                Bytes = savedBytes,
                 Sha256 = sha
             };
+        }
+
+        /// <summary>
+        /// Writes a desktop-ready copy: re-encoded baseline JPEG, downscaled with a cover fit so it
+        /// just covers the largest monitor (never upscaled). Returns the written file size in bytes.
+        /// </summary>
+        private static long SaveWallpaperCopy(byte[] data, string filePath)
+        {
+            using var src = Image.FromStream(new MemoryStream(data));
+
+            var (screenW, screenH) = TargetScreenSize();
+            // Cover fit: smallest scale that still covers the screen; only ever shrink.
+            double cover = Math.Max((double)screenW / src.Width, (double)screenH / src.Height);
+            double scale = Math.Min(1.0, cover);
+
+            int outW = Math.Max(1, (int)Math.Round(src.Width * scale));
+            int outH = Math.Max(1, (int)Math.Round(src.Height * scale));
+
+            using var bmp = new Bitmap(outW, outH, PixelFormat.Format24bppRgb);
+            using (var g = Graphics.FromImage(bmp))
+            {
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.CompositingQuality = CompositingQuality.HighQuality;
+                g.DrawImage(src, new Rectangle(0, 0, outW, outH));
+            }
+
+            var encoder = GetJpegEncoder();
+            var pars = new EncoderParameters(1);
+            pars.Param[0] = new EncoderParameter(Encoder.Quality, 92L);
+            bmp.Save(filePath, encoder, pars);
+            return new FileInfo(filePath).Length;
+        }
+
+        private static (int w, int h) TargetScreenSize()
+        {
+            try
+            {
+                // Largest monitor bound so a single image covers any screen at "Fill".
+                int w = 0, h = 0;
+                foreach (var scr in System.Windows.Forms.Screen.AllScreens)
+                {
+                    w = Math.Max(w, scr.Bounds.Width);
+                    h = Math.Max(h, scr.Bounds.Height);
+                }
+                if (w >= 640 && h >= 480) return (w, h);
+            }
+            catch { /* fall through to a sane default */ }
+            return (1920, 1080);
         }
 
         /// <summary>(Re)build a thumbnail from an existing full-size wallpaper file.</summary>
@@ -161,12 +212,6 @@ namespace WallpaperReddit.Services
         {
             using var sha = SHA256.Create();
             return Convert.ToHexString(sha.ComputeHash(data)).ToLowerInvariant();
-        }
-
-        private static string ExtensionFor(ImageFormat format)
-        {
-            if (format.Equals(ImageFormat.Png)) return ".png";
-            return ".jpg";
         }
 
         private static string SafeName(string id)

@@ -4,8 +4,12 @@ using System.IO;
 namespace WallpaperReddit.Services
 {
     /// <summary>
-    /// Centralises all on-disk locations. Everything lives under
-    /// %LOCALAPPDATA%\WallpaperReddit so per-user install and uninstall stay tidy.
+    /// Centralises all on-disk locations. App data (settings, library, thumbnails, log)
+    /// lives under %LOCALAPPDATA%\WallpaperReddit. The full-size wallpapers that get handed
+    /// to Windows live under the user's Pictures folder instead: the Windows desktop/shell
+    /// wallpaper loader cannot read files under %LOCALAPPDATA% on some setups (e.g. shells
+    /// modified by ExplorerPatcher), which makes the desktop go black. Pictures is a media
+    /// known-folder the shell can always read.
     /// </summary>
     public static class AppPaths
     {
@@ -23,7 +27,13 @@ namespace WallpaperReddit.Services
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "WallpaperReddit");
 
-            WallpapersDir = Path.Combine(Root, "Wallpapers");
+            // Full-size wallpapers must be somewhere the shell can read (Pictures/Downloads),
+            // NOT under AppData. Fall back to the app root if Pictures can't be resolved.
+            var pictures = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+            WallpapersDir = string.IsNullOrEmpty(pictures)
+                ? Path.Combine(Root, "Wallpapers")
+                : Path.Combine(pictures, "Reddit Wallpaper Rotator");
+
             ThumbnailsDir = Path.Combine(Root, "Thumbnails");
             SettingsFile = Path.Combine(Root, "settings.json");
             LibraryFile = Path.Combine(Root, "library.json");
