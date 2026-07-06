@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reddit-wallpaper-rotator"
+version = "1.0.0"
+description = "Rotate your KDE Plasma desktop wallpaper from chosen subreddits."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = [
+    "PySide6>=6.5",
+    "Pillow>=9.0",
+    "requests>=2.28",
+]
+
+[project.scripts]
+reddit-wallpaper-rotator = "rwr.app:main"
+
+[tool.setuptools]
+packages = ["rwr"]
+
+[tool.setuptools.package-data]
+rwr = ["icon.png"]

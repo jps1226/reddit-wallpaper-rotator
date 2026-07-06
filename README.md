@@ -2,6 +2,8 @@
 
 A lightweight Windows desktop app that downloads wallpapers from your chosen subreddits and rotates your desktop background on a schedule. It lives quietly in the system tray, keeps a browsable history, and lets you favorite, blacklist, and re-apply images.
 
+> **Using KDE Plasma / Linux?** There's a native PySide6 (Qt) port in [`kde/`](kde/README.md) with the same features.
+
 ## Features
 
 - **Pick your sources** — any list of subreddits (e.g. `wallpaper`, `wallpapers`, `EarthPorn`).

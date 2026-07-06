@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Reddit Wallpaper Rotator
+GenericName=Wallpaper Rotator
+Comment=Rotate your desktop wallpaper from chosen subreddits
+Exec=reddit-wallpaper-rotator
+Icon=preferences-desktop-wallpaper
+Terminal=false
+Categories=Utility;Qt;KDE;
+Keywords=wallpaper;reddit;background;desktop;
+StartupNotify=false

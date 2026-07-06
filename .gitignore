@@ -4,3 +4,11 @@ publish/
 installer/Output/
 *.user
 .vs/
+
+# Python (KDE port)
+__pycache__/
+*.pyc
+kde/.venv/
+kde/build/
+kde/dist/
+*.egg-info/
